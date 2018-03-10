@@ -6,7 +6,7 @@ from tabulate import tabulate
 from operator import itemgetter, attrgetter
 #from openpyxl.cell import get_column_letter
 main_file = "BudgetFile.xlsx" 
-all_expenditures = []
+all_transactions = []
 categories = {}
 def working_directory_data():
 	cwd = os.getcwd()
@@ -26,7 +26,7 @@ def yes_or_no(question):
 def start_program():
 	start_again = yes_or_no('Would you like to start again?')
 	if start_again == True:
-		main()
+		start()
 	else:
 		print('We are sorry to hear that.')
 def test_excel(user_name):
@@ -63,15 +63,13 @@ def budget_file():
 		print(main_file+" exist. File opened!")
 	else:
 		wb = Workbook()
-		filename = main_file
-		ws1 = wb.active
-		ws1.title = "Users"
-		rows = ["Name", "Email", "Password"]
-		ws1.append(rows)
-		ws1.freeze_panes = "A2"
-		wb.save(filename=filename)
+		ws = wb.active
+		ws.title = "Users"
+		ws.append(["Name", "Email", "Password"])
+		ws.freeze_panes = "A2"
+		wb.save(filename=main_file)
 		print(main_file+" created. File opened!")
-		return filename
+		return main_file
 def create_user():
 	print('Creating new user...')
 	name = input('Please add user name: ')
@@ -82,9 +80,9 @@ def create_user():
 	ws = wb["Users"]
 	#ws = wb.active
 	ws.append([name,email,password])
-	ws2 = wb.create_sheet(title=name)
-	expenditure = ["id", "title", "category", "m_category", "price", "date"]
-	ws2.append(expenditure)
+	ws1 = wb.create_sheet(title=name)
+	ws1.append(["id:", "title", "category", "m_category", "price", "date"])
+	ws1.freeze_panes = "A2"
 	wb.save(main_file)
 	print('User '+name+' created!')
 	return new_user
@@ -148,27 +146,27 @@ def active_user():
 	active_user = input("Please put your user name:")
 	return active_user
 
-class Expenditure():
+class Transaction():
 	""" This is expenditure """
 	_registry = []
 	class_counter = 1
 	def __init__(self,title,category,m_category,price,date):
 		self._registry.append(self)
-		self.id = Expenditure.class_counter
+		self.id = Transaction.class_counter
 		self.title = title
 		self.category = category
 		self.m_category = m_category
 		self.price = price
 		self.date = date
-		print('Expenditure %s created.' % (title))
-		Expenditure.class_counter += 1
+		print('Transaction %s created.' % (title))
+		Transaction.class_counter += 1
 	def __repr__(self):
-		return('\nExpense nr %s\nTitle: %s\nCategory: %s\nMain category: %s\nPrice: %s$\nDate: %s' % 
+		return('\nTransaction nr %s\nTitle: %s\nCategory: %s\nMain category: %s\nPrice: %s$\nDate: %s' % 
 			(self.id, self.title, self.category, self.m_category, self.price, self.date))
 	def add_to_excel(self,active_user):
 		wb = load_workbook(filename=main_file)
 		ws = wb[active_user]
-		print('Active user is: '+str(active_user))
+		#print('Active user is: '+str(active_user))
 		to_excel = [self.id,self.title,self.category,self.m_category,self.price,self.date]
 		ws.append(to_excel)
 		print(self.title+' added to excel file!')
@@ -179,13 +177,13 @@ def create_expenditure(active_user):
 	m_category = input('Please add expense main category: ')
 	price = float(input('Please add price: '))
 	date = input('Please add date: ')
-	new_expenditure = Expenditure(title,category,m_category,-price,date)
+	new_expenditure = Transaction(title,category,m_category,-price,date)
 	new_expenditure.add_to_excel(active_user)
-	all_expenditures.append(new_expenditure)
+	all_transactions.append(new_expenditure)
 def create_expenditure2(active_user,title,category,m_category,price,date):
-	new_expenditure = Expenditure(title,category,m_category,-price,date)
+	new_expenditure = Transaction(title,category,m_category,-price,date)
 	new_expenditure.add_to_excel(active_user)
-	all_expenditures.append(new_expenditure)
+	all_transactions.append(new_expenditure)
 def test_expenditures(active_user):
 	create_expenditure2(active_user,"Piwko", "Spożywka", "Jedzenie", 2.35, "25 luty")
 	create_expenditure2(active_user,"Prąd", "Opłaty", "Mieszkanie", 6.5, "2017-12-01")
@@ -194,7 +192,24 @@ def test_expenditures(active_user):
 	create_expenditure2(active_user,"Opłata za taxi", "Taxi", "Transport", 2.5, "12 stycznia")
 	create_expenditure2(active_user,"Szynka", "Mięso", "Jedzenie", 2.5, "27 marca")
 	create_expenditure2(active_user,"Bilet do kina", "Kino", "Rozrywka", 2.5, "31 stycznia")
-def delete_expenditure(active_user,wb):
+def create_income(active_user):
+	title = input('Please add expense title: ')
+	category = input('Please add expense category: ')
+	m_category = input('Please add expense main category: ')
+	price = float(input('Please add price: '))
+	date = input('Please add date: ')
+	new_income = Transaction(title,category,m_category,price,date)
+	new_income.add_to_excel(active_user)
+	all_transactions.append(new_income)
+def create_income2(active_user,title,category,m_category,price,date):
+	new_income = Transaction(title,category,m_category,price,date)
+	new_income.add_to_excel(active_user)
+	all_transactions.append(new_income)
+def test_incomes(active_user):
+	create_income2(active_user,"Styczeń", "Wypłata", "Praca", 835, "15 styczeń")
+	create_income2(active_user,"Luty", "Wypłata", "Praca", 650, "2017-02-10")
+	create_income2(active_user,"Wygrana", "Poker", "Biznes", 18.88, "10 grudnia")
+def delete_transaction(active_user,wb):
 	reply = input("Select the expenditure to be removed:\n")
 	old_sheet = wb[active_user]
 	old_sheet.title = active_user+'_old'
@@ -207,7 +222,7 @@ def delete_expenditure(active_user,wb):
 		new_sheet.cell(row=1, column=col_num).value = old_sheet.cell(row=1, column=col_num).value
 	for row_num in range(2, max_row):
 		if reply == str(row_num):
-			print('Expenditure '+old_sheet.cell(row=(int(reply)+1), column=2).value+' deleted')
+			print('Transction '+old_sheet.cell(row=(int(reply)+1), column=2).value+' deleted')
 			for row_num in range(1, int(reply)+1):
 				for col_num in range(1, max_col+1):
 					new_sheet.cell(row=row_num,column=col_num).value=old_sheet.cell(row=row_num,column=col_num).value
@@ -219,32 +234,96 @@ def delete_expenditure(active_user,wb):
 	wb.remove(old_sheet)
 	wb.save(main_file)
 	id_update(active_user)
+def show_transactions(active_user,wb,ws):
+	tableData = []
+	totalBalance = 0
+	print("All transactions:")
+	for col in ws.iter_rows(min_row=2, min_col=1, max_row=ws.max_row, max_col=ws.max_column):
+		tableData.append([col[0].value,col[1].value,col[2].value,col[3].value,col[4].value,col[5].value])
+		totalBalance += float(col[4].value)
+	print(tabulate((tableData),tablefmt="grid"))
+	print('Total balance is: $'+str(totalBalance))
+def show_transactions_sorted_by(active_user,wb,ws):
+	print('Sort transactions by:')
+	i = 1
+	sortBy = [	"Id",
+				"Title",
+				"Category",
+				"Main Category",
+				"Price",
+				"Date",
+				"Back to main menu"]
+	for x in sortBy:
+		print(x.ljust(35,'-')+str(i).rjust(2,'-'))
+		i += 1
+	reply = input('Type number from 1 to {}'.format(i-1).center(37,'-')+'\n')
+	if reply == "7":
+		what_next(active_user)
+		print("Returning to the main menu...")
+	else:
+		tableData = []
+		for col in ws.iter_rows(min_row=2, min_col=1, max_row=ws.max_row, max_col=ws.max_column):
+			tableData.append((col[0].value,col[1].value,col[2].value,col[3].value,col[4].value,col[5].value))
+		sortedData = sorted(tableData, key=operator.itemgetter(int(reply)-1))
+		header = ("id","Title","Category","m_Category","Price","Date")
+		sortedData.insert(0,header)
+		print('Transactions sorted by: '+header[int(reply)-1])
+		print(tabulate((sortedData),tablefmt="grid"))
+def show_incomes(active_user,wb,ws):
+	tableData = []
+	allIncomes = 0
+	print("All incomes:")
+	for col in ws.iter_rows(min_row=2, min_col=1, max_row=ws.max_row, max_col=ws.max_column):
+		if float(col[4].value) > 0:
+			tableData.append([col[0].value,col[1].value,col[2].value,col[3].value,col[4].value,col[5].value])
+			allIncomes += float(col[4].value)
+	header = ("id","Title","Category","m_Category","Price","Date")
+	tableData.insert(0,header)
+	print(tabulate((tableData),tablefmt="grid"))
+	print('The sum of incomes is: $'+str(allIncomes))
 def show_expenditures(active_user,wb,ws):
 	tableData = []
+	allExpenditures = 0
 	print("All expenditures:")
-	for col in ws.iter_rows(min_row=1, min_col=1, max_row=ws.max_row, max_col=ws.max_column):
-		tableData.append([col[0].value,col[1].value,col[2].value,col[3].value,col[4].value,col[5].value])
+	for col in ws.iter_rows(min_row=2, min_col=1, max_row=ws.max_row, max_col=ws.max_column):
+		if float(col[4].value) < 0:
+			tableData.append([col[0].value,col[1].value,col[2].value,col[3].value,col[4].value,col[5].value])
+			allExpenditures += float(col[4].value)
+	header = ("id","Title","Category","m_Category","Price","Date")
+	tableData.insert(0,header)
 	print(tabulate((tableData),tablefmt="grid"))
-def show_transactions_by(active_user,wb,ws):
-	tableData = []
-	for col in ws.iter_rows(min_row=1, min_col=1, max_row=ws.max_row, max_col=ws.max_column):
-		tableData.append((col[0].value,col[1].value,col[2].value,col[3].value,col[4].value,col[5].value))
-	tableData.sort(key=operator.itemgetter(2))
-	for elem in tableData:
-		print(elem)
-	print(tableData)
-def show_categories():
-	print('List of all categories: ')
-	for elem in all_expenditures:
-		print(elem.category)
-def show_main_categories():
-	print('List of all main categories: ')
-	for elem in all_expenditures:
-		print(elem.m_category)
-
+	print('The sum of expenditures is: $'+str(allExpenditures))
+def show_categories(active_user,wb,ws):
+	categories = []
+	print("All expenditures:")
+	for col in ws.iter_rows(min_row=2, min_col=1, max_row=ws.max_row, max_col=ws.max_column):
+		if str(col[2].value) not in categories:
+			categories.append(col[2].value)
+	print('List of categories: '+str(categories))
+def show_main_categories(active_user,wb,ws):
+	mainCategories = {}
+	print("All expenditures:")
+	for col in ws.iter_rows(min_row=2, min_col=1, max_row=ws.max_row, max_col=ws.max_column):
+		if str(col[3].value) not in mainCategories.keys():
+			key = str(col[3].value)
+			mainCategories.setdefault(key, [])
+			mainCategories[key].append(str(col[2].value))
+	for col in ws.iter_rows(min_row=2, min_col=1, max_row=ws.max_row, max_col=ws.max_column):
+		if str(col[2].value) not in mainCategories[str(col[3].value)]:
+			mainCategories[str(col[3].value)].append(str(col[2].value))
+	print('List of main categories with subcategories:\n'+str(mainCategories))
+def income_or_expense(question,active_user):
+	selection = input(question+' (I or E):\n').lower().strip()
+	if selection[:1] == 'i' or selection == '':
+		create_income(active_user)
+	elif selection[:1] == 'e':
+		create_expenditure(active_user)
+	else:
+		return income_or_expense('Please type I (for income) or E (for expenditure)')
 def start():
-	working_directory_data()
+	#working_directory_data()
 	budget_file()
+	print("Existing users: ")
 	user_names()
 	reply = yes_or_no('Hello. Do you already have user account?')
 	if reply == True:
@@ -255,6 +334,7 @@ def start():
 			user_login(name)
 			print(name)
 			test_expenditures(name)
+			test_incomes(name)
 			id_update(name)
 			what_next(name)
 			#open_file(main_file)
@@ -263,6 +343,7 @@ def start():
 		name = user_login(create_user().name)
 		print(name)
 		test_expenditures(name)
+		test_incomes(name)
 		what_next(name)
 		#open_file(main_file)
 	else:
@@ -272,50 +353,65 @@ def what_next(active_user):
 	ws = wb[active_user]
 	print('Please choose what would you like to do next')
 	i = 1
-	strings = [	"Show all expenditures",
-				"Add new expenditure",
-				"Delete expenditure",
-				"Show all incomes",
-				"Add new income",
-				"Delete income",
+	strings = [	"Show all transcations",
+				"Add new transaction",
+				"Delete transaction",
+				"Show only expenditures",
+				"Show only incomes",
 				"Show transactions in correct order",
-				"Show balances in correct order",
+				"Show transactions by date",
+				"Show main categories",
+				"Show categories",
 				"Show charts",
-				"Change user",
 				"Restart program",
+				"Open budget file",
 				"Save and exit"]
 	for string in strings:
 		print(string.ljust(35,'-')+str(i).rjust(2,'-'))
 		i += 1
-	reply = input('Type number from 1 to {}'.format(i).center(37,'-')+'\n')
+	reply = input('Type number from 1 to {}'.format(i-1).center(37,'-')+'\n')
 	if reply == "1":
-		show_expenditures(active_user,wb,ws)
+		show_transactions(active_user,wb,ws)
+		what_next(active_user)
 	elif reply == "2":
-		print("Adding new expenditure:")
-		create_expenditure(active_user)
+		income_or_expense("Would you like to add income or expanditure?",active_user)
+		what_next(active_user)
 	elif reply == "3":
-		print("Delete expenditure:")
-		show_expenditures(active_user,wb,ws)
-		delete_expenditure(active_user,wb)
+		print("Delete transaction:")
+		show_transactions(active_user,wb,ws)
+		delete_transaction(active_user,wb)
+		what_next(active_user)
 	elif reply == "4":
-		print("Showing all incomes:")
+		show_expenditures(active_user,wb,ws)
+		what_next(active_user)
 	elif reply == "5":
-		print("Adding new income:")
+		show_incomes(active_user,wb,ws)
+		what_next(active_user)
 	elif reply == "6":
-		print("Delete income:")
-	elif reply == "7":
 		print("Showing transaction. Choose order:")
-		show_transactions_by(active_user,wb,ws)
+		show_transactions_sorted_by(active_user,wb,ws)
+		what_next(active_user)
+	elif reply == "7":
+		print("Showing transactions by date:")
 	elif reply == "8":
-		print("Show balace. Choose order:")
+		print("Showing main categories:")
+		show_main_categories(active_user,wb,ws)
+		what_next(active_user)
 	elif reply == "9":
-		print("Show charts. Choose data:")
+		print("Showing categories:")
+		show_categories(active_user,wb,ws)
+		what_next(active_user)
 	elif reply == "10":
-		print("Changing user account:")
+		print("Show charts. Choose data:")
 	elif reply == "11":
 		print("Restarting program:")
+		start()
 	elif reply == "12":
+		open_file(main_file)
+	elif reply == "13":
 		print("Saving data and exit...")
+		wb.save(main_file)
+		exit()
 	else:
 		print("Error. Something go wrong...")
 	open_file(main_file)
