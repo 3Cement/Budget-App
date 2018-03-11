@@ -1,4 +1,8 @@
-import os, xlrd, operator, requests, sys, webbrowser, bs4, time
+#! phyton3
+# myBudgetApp.py - An app to manage your home budget.
+# It is a program that I write while learning programming. I encourage you to comment and write comments about the code.
+# Planned versions: web and desktop
+import os, xlrd, operator, requests, sys, webbrowser, bs4, time, datetime, re
 import pandas as pd
 from openpyxl import load_workbook, Workbook
 from openpyxl.compat import range
@@ -19,7 +23,7 @@ def yes_or_no(question):
 		print('Great.')
 		return True
 	elif reply[:1] == 'n':
-		print('Bad to hear that.')
+		#print('Bad to hear that.')
 		return False
 	else:
 		return yes_or_no('Please type Yes or No ')
@@ -45,7 +49,6 @@ def id_update(active_user):
 	for row_num in range(2, ws.max_row+1):
 		ws.cell(row=row_num,column=1).value = row_num-1
 	wb.save(main_file)
-
 class User():
 	_registry = []
 	class_counter = 1
@@ -70,11 +73,80 @@ def budget_file():
 		wb.save(filename=main_file)
 		print(main_file+" created. File opened!")
 		return main_file
+def create_username():
+	username = str(input('Please add username: '))
+	while True:
+		try:
+			usernameRegex = re.compile(r'''(
+				[a-zA-Z0-9._]{3}? 		# username
+				)''', re.VERBOSE)
+			if not usernameRegex.match(username):
+				print('Wrong username format! Please, type your username in correct format.')
+				return create_username() # if the user didn't enter right format, try again
+			print('Great! Good username format.')
+			return username
+		except:
+			print('Something go wrong!')
+			return create_username() # if the user didn't enter right format, try again	
+def create_email():
+	email = input('Please add user email: ')
+	while True:
+		try:
+			emailRegex = re.compile(r'''(
+				[a-zA-Z0-9._%+-]+ 		# username
+				@						# @ symbol
+				[a-zA-Z0-9.-]+			# domain name
+				(\.[a-zA-Z]{2,4})		# dot-something
+				)''', re.VERBOSE)
+			if not emailRegex.match(email):
+				print('Wrong email format! Please, type your email in correct format.')
+				return create_email() # if the user didn't enter right format, try again
+			print('Great! Good email format.')
+			return email
+		except:
+			return create_email() # if the user didn't enter right format, try again
+def create_password():
+	password = str(input('Please add password: '))
+	while True:
+		try:
+			usernameRegex = re.compile(r'''(
+				[a-zA-Z0-9._]{3}? 		# username
+				)''', re.VERBOSE)
+			if not usernameRegex.match(password):
+				print('Wrong password format! Please, type your password in correct format.')
+				return create_password() # if the user didn't enter right format, try again
+			print('Great! Good password format.')
+			return password
+		except:
+			print('Something go wrong!')
+			return create_password() # if the user didn't enter right format, try again	
+'''
+def userInputPasswordCheck():
+	passwordRegex = re.compile(r'''(
+    ^(?=.*[A-Z].*[A-Z])                # at least two capital letters
+    (?=.*[!@#$&*])                     # at least one of these special characters
+    (?=.*[0-9].*[0-9])                 # at least two numeric digits
+    (?=.*[a-z].*[a-z].*[a-z])          # at least three lower case letters
+    .{10,}                              # at least 10 total digits
+    $
+    )''', re.VERBOSE)
+
+    ppass = input("Enter a potential password: ")
+    mo = passwordRegex.search(ppass)
+    if (not mo):
+        print("Password not strong enough")
+        return False
+    else:
+        print("Password long and strong enough")
+        return True
+'''
 def create_user():
 	print('Creating new user...')
-	name = input('Please add user name: ')
-	email = input('Please add user email: ')
-	password = input('Please add user password: ')
+	#name = input('Please add user name: ')
+	#email = input('Please add user email: ')
+	name = create_username()
+	email = create_email()
+	password = create_password()
 	new_user = User(name,email,password)
 	wb = load_workbook(filename=main_file)
 	ws = wb["Users"]
@@ -86,6 +158,7 @@ def create_user():
 	wb.save(main_file)
 	print('User '+name+' created!')
 	return new_user
+create_user()
 def user_names():
 	wb = load_workbook(filename=main_file)
 	ws = wb["Users"]
@@ -145,7 +218,6 @@ def user_login(name):
 def active_user():
 	active_user = input("Please put your user name:")
 	return active_user
-
 class Transaction():
 	""" This is expenditure """
 	_registry = []
@@ -171,12 +243,29 @@ class Transaction():
 		ws.append(to_excel)
 		print(self.title+' added to excel file!')
 		wb.save(filename=main_file)
+def create_date(active_user):
+	reply = yes_or_no("Insert today's date?")
+	if reply == True:
+		date_now = datetime.datetime.now().strftime('%Y-%m-%d') 
+		print('Date now: '+str(date_now))
+	else:
+		while True:
+			try:
+				date_entry = input('Enter a date in YYYY-MM-DD format:\n')
+				year, month, day = map(int, date_entry.split('-'))
+				if year <= 2000 or year >= 2020:
+					continue
+				date = datetime.date(year,month,day)
+				print('Date set to: '+str(date))
+				break
+			except:
+				continue # if the user didn't enter right format, try again
 def create_expenditure(active_user):
 	title = input('Please add expense title: ')
 	category = input('Please add expense category: ')
 	m_category = input('Please add expense main category: ')
 	price = float(input('Please add price: '))
-	date = input('Please add date: ')
+	date = create_date(active_user)
 	new_expenditure = Transaction(title,category,m_category,-price,date)
 	new_expenditure.add_to_excel(active_user)
 	all_transactions.append(new_expenditure)
@@ -185,19 +274,19 @@ def create_expenditure2(active_user,title,category,m_category,price,date):
 	new_expenditure.add_to_excel(active_user)
 	all_transactions.append(new_expenditure)
 def test_expenditures(active_user):
-	create_expenditure2(active_user,"Piwko", "Spożywka", "Jedzenie", 2.35, "25 luty")
+	create_expenditure2(active_user,"Piwko", "Spożywka", "Jedzenie", 2.35, "2016-11-12")
 	create_expenditure2(active_user,"Prąd", "Opłaty", "Mieszkanie", 6.5, "2017-12-01")
-	create_expenditure2(active_user,"Czynsz", "Meble", "Mieszkanie", 123, "10 grudnia")
-	create_expenditure2(active_user,"Bilet", "Autobus", "Transport", 2.5, "12 stycznia")
-	create_expenditure2(active_user,"Opłata za taxi", "Taxi", "Transport", 2.5, "12 stycznia")
-	create_expenditure2(active_user,"Szynka", "Mięso", "Jedzenie", 2.5, "27 marca")
-	create_expenditure2(active_user,"Bilet do kina", "Kino", "Rozrywka", 2.5, "31 stycznia")
+	create_expenditure2(active_user,"Czynsz", "Meble", "Mieszkanie", 123, "2015-01-25")
+	create_expenditure2(active_user,"Bilet", "Autobus", "Transport", 2.5, "2018-01-05")
+	create_expenditure2(active_user,"Opłata za taxi", "Taxi", "Transport", 2.5, "2017-02-06")
+	create_expenditure2(active_user,"Szynka", "Mięso", "Jedzenie", 2.5, "2018-02-03")
+	create_expenditure2(active_user,"Bilet do kina", "Kino", "Rozrywka", 2.5, "2018-03-05")
 def create_income(active_user):
 	title = input('Please add expense title: ')
 	category = input('Please add expense category: ')
 	m_category = input('Please add expense main category: ')
 	price = float(input('Please add price: '))
-	date = input('Please add date: ')
+	date = create_date(active_user)
 	new_income = Transaction(title,category,m_category,price,date)
 	new_income.add_to_excel(active_user)
 	all_transactions.append(new_income)
@@ -206,9 +295,9 @@ def create_income2(active_user,title,category,m_category,price,date):
 	new_income.add_to_excel(active_user)
 	all_transactions.append(new_income)
 def test_incomes(active_user):
-	create_income2(active_user,"Styczeń", "Wypłata", "Praca", 835, "15 styczeń")
-	create_income2(active_user,"Luty", "Wypłata", "Praca", 650, "2017-02-10")
-	create_income2(active_user,"Wygrana", "Poker", "Biznes", 18.88, "10 grudnia")
+	create_income2(active_user,"Styczeń", "Wypłata", "Praca", 835, "2018-01-03")
+	create_income2(active_user,"Luty", "Wypłata", "Praca", 650, "2018-02-02")
+	create_income2(active_user,"Wygrana", "Poker", "Biznes", 18.88, "2018-01-13")
 def delete_transaction(active_user,wb):
 	reply = input("Select the expenditure to be removed:\n")
 	old_sheet = wb[active_user]
